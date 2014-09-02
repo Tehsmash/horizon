@@ -355,26 +355,32 @@ class MemoizedTests(test.TestCase):
 
 
 class GetPageSizeTests(test.TestCase):
+    def _horizon_page_size_key(self, request):
+        return "horizon_pagesize"
+
     def test_bad_session_value(self):
         requested_url = '/project/instances/'
         request = self.factory.get(requested_url)
-        request.session['horizon_pagesize'] = 'not int-able'
+        request.session['user_id'] = 'fakeuserid'
+        request.session[self._horizon_page_size_key(request)] = 'not int-able'
         default = 30
         self.assertEqual(functions.get_page_size(request, default), default)
 
     def test_bad_cookie_value(self):
         requested_url = '/project/instances/'
         request = self.factory.get(requested_url)
-        if 'horizon_pagesize' in request.session:
-            del request.session['horizon_pagesize']
-        request.COOKIES['horizon_pagesize'] = 'not int-able'
+        request.session['user_id'] = 'fakeuserid'
+        if self._horizon_page_size_key(request) in request.session:
+            del request.session[self._horizon_page_size_key(request)]
+        request.COOKIES[self._horizon_page_size_key(request)] = 'not int-able'
         default = 30
         self.assertEqual(functions.get_page_size(request, default), default)
 
     def test_float_default_value(self):
         requested_url = '/project/instances/'
         request = self.factory.get(requested_url)
-        request.session['horizon_pagesize'] = 'not int-able'
+        request.session['user_id'] = 'fakeuserid'
+        request.session[self._horizon_page_size_key(request)] = 'not int-able'
         default = 30.1
         expected = 30
         self.assertEqual(functions.get_page_size(request, default), expected)
@@ -382,15 +388,18 @@ class GetPageSizeTests(test.TestCase):
     def test_session_gets_set(self):
         requested_url = '/project/instances/'
         request = self.factory.get(requested_url)
-        request.session['horizon_pagesize'] = 'not int-able'
+        request.session['user_id'] = 'fakeuserid'
+        request.session[self._horizon_page_size_key(request)] = 'not int-able'
         default = 30
         functions.get_page_size(request, default)
-        self.assertEqual(request.session['horizon_pagesize'], default)
+        self.assertEqual(request.session[self._horizon_page_size_key(request)],
+                         default)
 
     def test_bad_default_value(self):
         requested_url = '/project/instances/'
         request = self.factory.get(requested_url)
-        request.session['horizon_pagesize'] = 'not int-able'
+        request.session['user_id'] = 'fakeuserid'
+        request.session[self._horizon_page_size_key(request)] = 'not int-able'
         default = 'also not int-able'
         self.assertRaises(ValueError,
                           functions.get_page_size,

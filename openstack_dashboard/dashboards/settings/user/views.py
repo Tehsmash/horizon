@@ -18,20 +18,25 @@ from horizon import forms
 from horizon.utils import functions as utils
 from openstack_dashboard.dashboards.settings.user import forms as user_forms
 
+from horizon.utils import jsoncookie
+
 
 class UserSettingsView(forms.ModalFormView):
     form_class = user_forms.UserSettingsForm
     template_name = 'settings/user/settings.html'
 
     def get_initial(self):
+        usr_id = self.request.session.get('user_id')
+        usr_cookie = jsoncookie.JSONCookieEntry(self.request, usr_id)
+        la_key = settings.LANGUAGE_COOKIE_NAME
+        tz_key = "django_timezone"
         return {
             'language': self.request.session.get(
-                settings.LANGUAGE_COOKIE_NAME,
-                self.request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME,
-                                         self.request.LANGUAGE_CODE)),
+                la_key,
+                usr_cookie.get(la_key, self.request.LANGUAGE_CODE)),
             'timezone': self.request.session.get(
-                'django_timezone',
-                self.request.COOKIES.get('django_timezone', 'UTC')),
+                tz_key,
+                usr_cookie.get(tz_key, 'UTC')),
             'pagesize': utils.get_page_size(self.request)}
 
     def form_valid(self, form):

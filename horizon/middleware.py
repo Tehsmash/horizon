@@ -28,6 +28,7 @@ from django.contrib.auth import REDIRECT_FIELD_NAME  # noqa
 from django.contrib.auth.views import redirect_to_login  # noqa
 from django.contrib import messages as django_messages
 from django import http
+from django.http import HttpResponseRedirect  # noqa
 from django import shortcuts
 from django.utils.encoding import iri_to_uri  # noqa
 from django.utils import timezone
@@ -52,8 +53,11 @@ class HorizonMiddleware(object):
     def _check_has_timed_timeout(self, request):
         """Check for session timeout and return timestamp."""
         has_timed_out = False
+
+        tz_key = "django_timezone"
+
         # Activate timezone handling
-        tz = request.session.get('django_timezone')
+        tz = request.session.get(tz_key)
         if tz:
             timezone.activate(tz)
         try:

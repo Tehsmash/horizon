@@ -20,6 +20,8 @@ from django.utils.encoding import force_text
 from django.utils.functional import lazy  # noqa
 from django.utils import translation
 
+from horizon.utils import jsoncookie
+
 
 def _lazy_join(separator, strings):
     return separator.join([force_text(s)
@@ -57,15 +59,19 @@ def logout_with_message(request, msg):
 
 def get_page_size(request, default=20):
     session = request.session
-    cookies = request.COOKIES
+
+    usr_id = session.get('user_id')
+    usr_cookie = jsoncookie.JSONCookieEntry(request, usr_id)
+    ps_key = "horizon_pagesize"
+
     try:
-        page_size = int(session.get('horizon_pagesize',
-                                    cookies.get('horizon_pagesize',
+        page_size = int(session.get(ps_key,
+                                    usr_cookie.get(ps_key,
                                                 getattr(settings,
                                                         'API_RESULT_PAGE_SIZE',
                                                         default))))
     except ValueError:
-        page_size = session['horizon_pagesize'] = int(default)
+        page_size = session[ps_key] = int(default)
     return page_size
 
 

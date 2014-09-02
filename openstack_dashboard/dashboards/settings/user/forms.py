@@ -24,6 +24,7 @@ import pytz
 
 from horizon import forms
 from horizon import messages
+from horizon.utils import jsoncookie
 
 
 def _one_year():
@@ -80,23 +81,27 @@ class UserSettingsForm(forms.SelfHandlingForm):
 
     def handle(self, request, data):
         response = shortcuts.redirect(request.build_absolute_uri())
+
+        usr_id = request.session['user_id']
+        usr_cookie = jsoncookie.JSONCookieEntry(request, usr_id, response)
+        la_key = settings.LANGUAGE_COOKIE_NAME
+        tz_key = "django_timezone"
+        ps_key = "horizon_pagesize"
+
         # Language
         lang_code = data['language']
         if lang_code and translation.check_for_language(lang_code):
             if hasattr(request, 'session'):
-                request.session['django_language'] = lang_code
-            response.set_cookie(settings.LANGUAGE_COOKIE_NAME, lang_code,
-                                expires=_one_year())
+                request.session[la_key] = lang_code
+            usr_cookie[la_key] = lang_code
 
         # Timezone
-        request.session['django_timezone'] = pytz.timezone(
+        request.session[tz_key] = pytz.timezone(
             data['timezone']).zone
-        response.set_cookie('django_timezone', data['timezone'],
-                            expires=_one_year())
+        usr_cookie[tz_key] = data['timezone']
 
-        request.session['horizon_pagesize'] = data['pagesize']
-        response.set_cookie('horizon_pagesize', data['pagesize'],
-                            expires=_one_year())
+        request.session[ps_key] = data['pagesize']
+        usr_cookie[ps_key] = data['pagesize']
 
         with translation.override(lang_code):
             messages.success(request,
