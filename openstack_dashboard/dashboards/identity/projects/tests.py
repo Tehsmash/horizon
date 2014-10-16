@@ -216,7 +216,7 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
                             ['<CreateProjectInfo: createprojectinfoaction>',
                              '<UpdateProjectMembers: update_members>',
                              '<UpdateProjectGroups: update_group_members>',
-                             '<UpdateProjectQuota: update_quotas>'])
+                             '<CreateProjectQuota: create_quotas>'])
 
     def test_add_project_get_domain(self):
         domain = self.domains.get(id="1")
@@ -324,8 +324,6 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
             .AndReturn(groups)
 
         # handle
-        quotas.tenant_quota_usages(IsA(http.HttpRequest)) \
-            .AndReturn(quota_usages)
         project_details = self._get_project_info(project)
         quota_data = self._get_quota_info(quota)
 
@@ -432,6 +430,7 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
         res = self.client.get(url)
 
         self.assertTemplateUsed(res, views.WorkflowView.template_name)
+
         self.assertContains(res, "Unable to retrieve default quota values")
 
     def test_add_project_quota_defaults_error_domain(self):
@@ -477,8 +476,6 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
             .AndReturn(groups)
 
         # handle
-        quotas.tenant_quota_usages(IsA(http.HttpRequest)) \
-            .AndReturn(quota_usages)
         project_details = self._get_project_info(project)
 
         api.keystone.tenant_create(IsA(http.HttpRequest), **project_details) \
@@ -499,57 +496,6 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
         self.setSessionValues(domain_context=domain.id,
                               domain_context_name=domain.name)
         self.test_add_project_tenant_create_error()
-
-    @test.create_stubs({api.keystone: ('user_list',
-                                       'role_list',
-                                       'group_list',
-                                       'get_default_domain',
-                                       'get_default_role',
-                                       'add_tenant_user_role'),
-                        quotas: ('get_default_quota_data',
-                                 'get_disabled_quotas',
-                                 'tenant_quota_usages'),
-                        api.nova: ('tenant_quota_update',)})
-    def test_project_quota_update_invalid_value(self):
-        project = self.tenants.first()
-        quota = self.quotas.first()
-        default_role = self.roles.first()
-        default_domain = self._get_default_domain()
-        domain_id = default_domain.id
-        users = self._get_all_users(domain_id)
-        groups = self._get_all_groups(domain_id)
-        roles = self.roles.list()
-        quota_usages = self.quota_usages.first()
-        quota_usages['instances']['used'] = 5
-
-        # init
-        api.keystone.get_default_domain(IsA(http.HttpRequest)) \
-            .AndReturn(default_domain)
-        quotas.get_disabled_quotas(IsA(http.HttpRequest)) \
-            .AndReturn(self.disabled_quotas.first())
-        quotas.get_default_quota_data(IsA(http.HttpRequest)).AndReturn(quota)
-
-        api.keystone.get_default_role(IsA(http.HttpRequest)) \
-            .MultipleTimes().AndReturn(default_role)
-        api.keystone.user_list(IsA(http.HttpRequest), domain=domain_id) \
-            .AndReturn(users)
-        api.keystone.role_list(IsA(http.HttpRequest)) \
-            .MultipleTimes().AndReturn(roles)
-        api.keystone.group_list(IsA(http.HttpRequest), domain=domain_id) \
-            .AndReturn(groups)
-        quotas.tenant_quota_usages(IsA(http.HttpRequest)) \
-            .AndReturn(quota_usages)
-
-        self.mox.ReplayAll()
-
-        workflow_data = {}
-        workflow_data.update(self._get_workflow_data(project, quota))
-        workflow_data['instances'] = 2
-        url = reverse('horizon:identity:projects:create')
-        res = self.client.post(url, workflow_data)
-        msg = 'Quota value(s) cannot be less than the current usage ' \
-              'value(s): 5 Instances used.'
-        self.assertContains(res, msg)
 
     @test.create_stubs({api.keystone: ('tenant_create',
                                        'user_list',
@@ -590,8 +536,6 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
             .AndReturn(groups)
 
         # handle
-        quotas.tenant_quota_usages(IsA(http.HttpRequest)) \
-            .AndReturn(quota_usages)
         project_details = self._get_project_info(project)
         quota_data = self._get_quota_info(quota)
 
@@ -679,8 +623,6 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
             .AndReturn(groups)
 
         # handle
-        quotas.tenant_quota_usages(IsA(http.HttpRequest)) \
-            .AndReturn(quota_usages)
         project_details = self._get_project_info(project)
         quota_data = self._get_quota_info(quota)
 
@@ -762,9 +704,6 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
             .MultipleTimes().AndReturn(roles)
         api.keystone.group_list(IsA(http.HttpRequest), domain=domain_id) \
             .AndReturn(groups)
-
-        quotas.tenant_quota_usages(IsA(http.HttpRequest)) \
-            .AndReturn(quota_usages)
 
         self.mox.ReplayAll()
 
@@ -1103,7 +1042,7 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                                     group='3',
                                     project=self.tenant.id)
 
-        quotas.tenant_quota_usages(IsA(http.HttpRequest)) \
+        quotas.tenant_quota_usages(IsA(http.HttpRequest), tenant_id=project.id) \
             .AndReturn(quota_usages)
 
         nova_updated_quota = dict([(key, updated_quota[key]) for key in
@@ -1266,7 +1205,7 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
         updated_quota = self._get_quota_info(quota)
 
         # handle
-        quotas.tenant_quota_usages(IsA(http.HttpRequest)) \
+        quotas.tenant_quota_usages(IsA(http.HttpRequest), tenant_id=project.id) \
             .AndReturn(quota_usages)
         api.keystone.tenant_update(IsA(http.HttpRequest),
                                    project.id,
@@ -1442,7 +1381,7 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                                     group='3',
                                     project=self.tenant.id)
 
-        quotas.tenant_quota_usages(IsA(http.HttpRequest)) \
+        quotas.tenant_quota_usages(IsA(http.HttpRequest), tenant_id=project.id) \
             .AndReturn(quota_usages)
 
         nova_updated_quota = dict([(key, updated_quota[key]) for key in
@@ -1562,7 +1501,7 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
         updated_quota = self._get_quota_info(quota)
 
         # handle
-        quotas.tenant_quota_usages(IsA(http.HttpRequest)) \
+        quotas.tenant_quota_usages(IsA(http.HttpRequest), tenant_id=project.id) \
             .AndReturn(quota_usages)
         api.keystone.tenant_update(IsA(http.HttpRequest),
                                    project.id,
