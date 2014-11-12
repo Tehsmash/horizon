@@ -178,6 +178,7 @@ class DataTableView(MultiTableView):
     """
     table_class = None
     context_object_name = 'table'
+    display_table_name = False
 
     def _get_data_dict(self):
         if not self._data:
@@ -211,6 +212,7 @@ class DataTableView(MultiTableView):
         context = super(DataTableView, self).get_context_data(**kwargs)
         if hasattr(self, "table"):
             context[self.context_object_name] = self.table
+        context['display_table_name'] = self.display_table_name
         return context
 
     def post(self, request, *args, **kwargs):
