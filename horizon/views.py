@@ -34,6 +34,7 @@ class APIView(generic.TemplateView):
     the :func:`horizon.exceptions.handle` error handler if not otherwise
     caught.
     """
+
     def get_data(self, request, context, *args, **kwargs):
         """This method should handle any necessary API calls, update the
         context object, and return the context object at the end.
@@ -47,3 +48,15 @@ class APIView(generic.TemplateView):
         except Exception:
             exceptions.handle(request)
         return self.render_to_response(context)
+
+
+class PageTitleMixin(object):
+    page_title = ""
+
+    def title_data(self, **kwargs):
+        return {}
+
+    def get_context_data(self, **kwargs):
+        context = super(PageTitleMixin, self).get_context_data(**kwargs)
+        context["page_title"] = self.page_title % self.title_data(**kwargs)
+        return context

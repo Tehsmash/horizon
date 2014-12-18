@@ -16,9 +16,10 @@ from django.views import generic
 from horizon import exceptions
 from horizon import tables
 from horizon.tabs.base import TableTab  # noqa
+from horizon import views
 
 
-class TabView(generic.TemplateView):
+class TabView(views.PageTitleMixin, generic.TemplateView):
     """A generic class-based view for displaying a
     :class:`horizon.tabs.TabGroup`.
 

@@ -40,6 +40,7 @@ from openstack_dashboard.dashboards.project.access_and_security.\
 class DetailView(tables.DataTableView):
     table_class = project_tables.RulesTable
     template_name = 'project/access_and_security/security_groups/detail.html'
+    page_title = _("Manage Security Group Rules: %(name)s")
 
     @memoized.memoized_method
     def _get_data(self):
@@ -59,15 +60,15 @@ class DetailView(tables.DataTableView):
         return sorted(data.rules, key=lambda rule: (rule.ip_protocol,
                                                     rule.from_port))
 
+    def title_data(self, **kwargs):
+        data = super(DetailView, self).title_data(**kwargs)
+        security_group = self._get_data()
+        data['name'] = "%s (%s)" % (security_group.name, security_group.id)
+        return data
+
     def get_context_data(self, **kwargs):
         context = super(DetailView, self).get_context_data(**kwargs)
-        security_group = self._get_data()
-        security_group_name_id = "%s (%s)" % (security_group.name,
-                                              security_group.id)
-        context["security_group"] = security_group
-        context["page_title"] = _(
-            "Manage Security Group Rules: %(security_group)s") % {
-            'security_group': security_group_name_id}
+        context["security_group"] = self._get_data()
         return context
 
 

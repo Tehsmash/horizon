@@ -94,6 +94,7 @@ class UpdateView(forms.ModalFormView):
 class DetailView(tables.MultiTableView):
     table_classes = (subnet_tables.SubnetsTable, port_tables.PortsTable)
     template_name = 'project/networks/detail.html'
+    page_title = _("Network Details: %(name)s")
 
     def get_subnets_data(self):
         try:
@@ -116,6 +117,11 @@ class DetailView(tables.MultiTableView):
             exceptions.handle(self.request, msg)
         return ports
 
+    def title_data(self, **kwargs):
+        data = super(DetailView, self).title_data(**kwargs)
+        data['name'] = self._get_data().name
+        return data
+
     @memoized.memoized_method
     def _get_data(self):
         try:
@@ -136,9 +142,6 @@ class DetailView(tables.MultiTableView):
         table = project_tables.NetworksTable(self.request)
         context["url"] = self.get_redirect_url()
         context["actions"] = table.render_row_actions(network)
-        context["page_title"] = _("Network Details: "
-                                  "%(network_name)s") % {'network_name':
-                                                         network.name}
         return context
 
     @staticmethod

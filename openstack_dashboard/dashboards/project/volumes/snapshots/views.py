@@ -61,6 +61,7 @@ class UpdateView(forms.ModalFormView):
 class DetailView(tabs.TabView):
     tab_group_class = vol_snapshot_tabs.SnapshotDetailTabs
     template_name = 'project/volumes/snapshots/detail.html'
+    page_title = _("Volume Snapshot Details: %(name)s")
 
     def get_context_data(self, **kwargs):
         context = super(DetailView, self).get_context_data(**kwargs)
@@ -69,10 +70,12 @@ class DetailView(tabs.TabView):
         context["snapshot"] = snapshot
         context["url"] = self.get_redirect_url()
         context["actions"] = table.render_row_actions(snapshot)
-        context["page_title"] = _("Volume Snapshot Details: "
-                                  "%(snapshot_name)s") % {'snapshot_name':
-                                                          snapshot.name}
         return context
+
+    def title_data(self, **kwargs):
+        data = super(DetailView, self).title_data(**kwargs)
+        data['name'] = self.get_data().name
+        return data
 
     @memoized.memoized_method
     def get_data(self):

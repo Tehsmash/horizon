@@ -75,8 +75,11 @@ class BackupView(horizon_workflows.WorkflowView):
 
 class DetailView(horizon_views.APIView):
     template_name = "project/database_backups/details.html"
+    page_title = _("Backup Details: %(backup_name)s")
 
     def get_data(self, request, context, *args, **kwargs):
+        context = super(DetailView, self).get_data(
+            request, context, *args, **kwargs)
         backup_id = kwargs.get("backup_id")
         try:
             backup = api.trove.backup_get(request, backup_id)
@@ -103,8 +106,5 @@ class DetailView(horizon_views.APIView):
             instance = None
         context['backup'] = backup
         context['instance'] = instance
-        context['page_title'] = _("Backup Details: "
-                                  "%(backup_name)s") % {'backup_name':
-                                                        backup.name}
-
+        context['page_title'] = self.page_title % {'backup_name': backup.name}
         return context

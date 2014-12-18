@@ -45,6 +45,7 @@ class CreateBackupView(forms.ModalFormView):
 class BackupDetailView(tabs.TabView):
     tab_group_class = backup_tabs.BackupDetailTabs
     template_name = 'project/volumes/backups/detail.html'
+    page_title = _("Volume Backup Details: %(name)s")
 
     def get_context_data(self, **kwargs):
         context = super(BackupDetailView, self).get_context_data(**kwargs)
@@ -53,11 +54,12 @@ class BackupDetailView(tabs.TabView):
         context["backup"] = backup
         context["url"] = self.get_redirect_url()
         context["actions"] = table.render_row_actions(backup)
-        context["page_title"] = _("Volume Backup Details: "
-                                  "%(backup_name)s") % {'backup_name':
-                                                        backup.name}
-
         return context
+
+    def title_data(self, **kwargs):
+        data = super(BackupDetailView, self).title_data(**kwargs)
+        data['name'] = self.get_data().name
+        return data
 
     @memoized.memoized_method
     def get_data(self):

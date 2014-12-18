@@ -42,6 +42,7 @@ from openstack_dashboard.dashboards.project.volumes \
 class DetailView(tabs.TabView):
     tab_group_class = project_tabs.VolumeDetailTabs
     template_name = 'project/volumes/volumes/detail.html'
+    page_title = _("Volume Details: %(name)s")
 
     def get_context_data(self, **kwargs):
         context = super(DetailView, self).get_context_data(**kwargs)
@@ -50,11 +51,12 @@ class DetailView(tabs.TabView):
         context["volume"] = volume
         context["url"] = self.get_redirect_url()
         context["actions"] = table.render_row_actions(volume)
-        context["page_title"] = _("Volume Details: "
-                                  "%(volume_name)s") % {'volume_name':
-                                                        volume.name}
-
         return context
+
+    def title_data(self, **kwargs):
+        data = super(DetailView, self).title_data(**kwargs)
+        data['name'] = self.get_data().name
+        return data
 
     @memoized.memoized_method
     def get_data(self):
